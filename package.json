@@ -1,0 +1,51 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "migrate:latest": "knex migrate:latest --knexfile src/knex/knexfile.js",
+    "migrate:rollback": "knex migrate:rollback --knexfile src/knex/knexfile.js",
+    "migrate:create": "node src/knex/generator.js",
+    "migrate:status": "knex migrate:status --knexfile src/knex/knexfile.js",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@langchain/community": "^0.3.53",
+    "@langchain/core": "^0.3.72",
+    "@langchain/qdrant": "^0.1.3",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "bcryptjs": "^3.0.2",
+    "cheerio": "^1.1.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "lodash": "^4.17.21",
+    "mammoth": "^1.10.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.13.1",
+    "word-extractor": "^1.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "prettier": "^3.7.4"
+  }
+}
