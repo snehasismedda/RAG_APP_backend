@@ -6,7 +6,7 @@ export const addUser = async (user) => {
     first_name: user.firstName,
     last_name: user.lastName,
     email: user.email,
-    hash_password: user.password, // Table column is hash_password
+    hash_password: user.password,
     role: user.role || 'user',
   };
   const [result] = await db('ragapp.users').insert(dbUser).returning('id');

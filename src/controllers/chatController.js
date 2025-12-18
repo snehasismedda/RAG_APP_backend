@@ -1,6 +1,9 @@
 import { prepareHistory } from '../utils/prepareHistory.js';
 import { generateResponse } from '../services/ai_service/response/index.js';
-import { saveConversation } from '../models/conversationModel.js';
+import {
+  saveConversations,
+  getConversationHistory,
+} from '../models/conversationModel.js';
 import * as chatModel from '../models/chatModel.js';
 
 // Send message and store conversation
@@ -28,7 +31,7 @@ export const chat = async (req, res) => {
     }
 
     const history = await prepareHistory({ notebookId, chatId, model });
-
+    console.log("::HISTORY:: ",JSON.stringify(history, null, 2));
     const response = await generateResponse({
       query,
       model,
@@ -37,21 +40,6 @@ export const chat = async (req, res) => {
       maxOutputTokens,
       systemInstruction,
       history,
-    });
-
-    // Save user message to conversation
-    await saveConversation({
-      message: [{ text: query }],
-      role: 'user',
-      chatId,
-      notebookId,
-      userId,
-    });
-
-    // Save AI response to conversation
-    await saveConversation({
-      message: [{ text: response }],
-      role: 'assistant',
       chatId,
       notebookId,
       userId,
@@ -147,6 +135,33 @@ export const deleteChat = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Chat deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const getConversations = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+
+    const chat = await chatModel.getChatById(chatId, userId);
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    const conversations = await getConversationHistory({
+      chatId,
+      notebookId: chat.fk_notebook_id,
+      userId: chat.fk_user_id,
+    });
+
+    const filteredConversations = conversations.filter((conversation) => conversation.content !== '');
+
+    console.log(JSON.stringify(filteredConversations, null, 2));
+    res.status(200).json(filteredConversations);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1,12 +1,14 @@
 import { generateResponse as generateGeminiResponse } from './gemini.js';
 import { toolRegistry } from '../tools/index.js';
+import { saveConversations } from '../../../models/conversationModel.js';
 
 export const generateResponse = async (data) => {
   const { model } = data;
   try {
     switch (model.toLowerCase()) {
       case 'gemini':
-        return await _generateGeminiAiResponse(data);
+        const result = await _generateGeminiAiResponse(data);
+        return result;
       default:
         throw new Error(`Model '${model}' not supported.`);
     }
@@ -15,7 +17,16 @@ export const generateResponse = async (data) => {
   }
 };
 
-const _generateGeminiAiResponse = async (data) => {
+const _generateGeminiAiResponse = async (data, conversationsToSave = []) => {
+
+  if (data.query) {
+    conversationsToSave.push({
+      role: 'user',
+      content: data.query,
+      metadata: {},
+    });
+  }
+
   try {
     const response = await generateGeminiResponse(data);
     console.log(JSON.stringify(response, null, 2));
@@ -29,7 +40,26 @@ const _generateGeminiAiResponse = async (data) => {
 
     if (functionCalls.length === 0) {
       if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return response.candidates[0].content.parts[0].text;
+        const textResponse = response.candidates[0].content.parts[0].text;
+
+        conversationsToSave.push({
+          role: 'assistant',
+          content: textResponse,
+          metadata: {},
+        });
+
+        console.log("::CONVERSATIONS:: ",conversationsToSave);
+
+        await saveConversations({
+          conversations: conversationsToSave,
+          chatId: data.chatId,
+          notebookId: data.notebookId,
+          userId: data.userId,
+          model: data.model,
+          modelId: data.modelId,
+        });
+
+        return textResponse;
       }
       return 'No response generated.';
     } else {
@@ -70,6 +100,26 @@ const _generateGeminiAiResponse = async (data) => {
         })
       );
 
+      // Convert function calls to toolCalls format
+      const toolCalls = functionCalls.map((part, index) => ({
+        id: `toolId_${Date.now()}_${index}`,
+        type: 'function',
+        function: {
+          name: part.functionCall.name,
+          arguments: part.functionCall.args,
+        },
+      }));
+
+      // Always add assistant tool calls (including recursive rounds)
+      conversationsToSave.push({
+        role: 'assistant',
+        content: '',
+        metadata: {
+          toolCalls: toolCalls,
+        },
+      });
+
+      // Build history for recursive call in Gemini format
       const conversationHistory = [
         ...data.history,
         { role: 'user', parts: [{ text: data.query }] },
@@ -83,11 +133,14 @@ const _generateGeminiAiResponse = async (data) => {
         },
       ];
 
-      return await _generateGeminiAiResponse({
-        ...data,
-        history: conversationHistory,
-        query: '',
-      });
+      // Recursive call with accumulated conversations array
+      return await _generateGeminiAiResponse(
+        {
+          ...data,
+          history: conversationHistory,
+          query: '',
+        },
+      );
     }
   } catch (error) {
     console.error('Error in Gemini AI response generation:', error);

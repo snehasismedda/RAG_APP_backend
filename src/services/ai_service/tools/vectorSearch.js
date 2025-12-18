@@ -17,12 +17,9 @@ export const vectorSearchTool = {
       type: 'object',
       properties: {
         query: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
+          type: 'string',
           description:
-            'One or more natural language queries for similarity search.',
+            'A natural language query for similarity search.',
         },
         topK: {
           type: 'number',

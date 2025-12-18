@@ -10,6 +10,7 @@ Auth: All routes require JWT cookie
 **Use:** Send message to AI and save conversation
 
 **Request Body:**
+
 ```json
 {
   "query": "string (required)",
@@ -24,6 +25,7 @@ Auth: All routes require JWT cookie
 ```
 
 **Response (200):**
+
 ```json
 {
   "response": "AI generated response text"
@@ -37,6 +39,7 @@ Auth: All routes require JWT cookie
 **Use:** Create a new chat session in a notebook
 
 **Request Body:**
+
 ```json
 {
   "title": "string",
@@ -45,6 +48,7 @@ Auth: All routes require JWT cookie
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "272417636529355700",
@@ -64,9 +68,11 @@ Auth: All routes require JWT cookie
 **Use:** Get all chats in a notebook
 
 **URL Params:**
+
 - `notebookId` - Notebook ID
 
 **Response (200):**
+
 ```json
 [
   {
@@ -85,9 +91,11 @@ Auth: All routes require JWT cookie
 **Use:** Get chat by ID
 
 **URL Params:**
+
 - `id` - Chat ID
 
 **Response (200):**
+
 ```json
 {
   "id": "272417636529355700",
@@ -105,9 +113,11 @@ Auth: All routes require JWT cookie
 **Use:** Update chat title
 
 **URL Params:**
+
 - `id` - Chat ID
 
 **Request Body:**
+
 ```json
 {
   "title": "string"
@@ -123,11 +133,48 @@ Auth: All routes require JWT cookie
 **Use:** Delete chat (soft delete)
 
 **URL Params:**
+
 - `id` - Chat ID
 
 **Response (200):**
+
 ```json
 {
   "message": "Chat deleted successfully"
+}
+```
+
+---
+
+## GET /chat/conversation/:chatId
+
+**Use:** Get conversation history for a chat
+
+**URL Params:**
+
+- `chatId` - Chat ID
+
+**Response (200):**
+
+```json
+[
+  {
+    "message": "[{\"text\": \"User message\"}]",
+    "metadata": null,
+    "role": "user"
+  },
+  {
+    "message": "[{\"text\": \"AI response\"}]",
+    "metadata": null,
+    "role": "assistant"
+  }
+]
+```
+
+**Response (404):**
+
+```json
+{
+  "error": "Chat not found"
 }
 ```

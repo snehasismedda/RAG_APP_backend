@@ -14,7 +14,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.post('/', createNotebook);
-router.get('/', getNotebooks);  
+router.get('/', getNotebooks);
 router.get('/:id', getNotebookById);
 router.put('/:id', updateNotebook);
 router.delete('/:id', deleteNotebook);

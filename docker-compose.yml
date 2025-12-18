@@ -19,16 +19,6 @@ services:
     volumes:
       - rag_postgres_data:/var/lib/postgresql/data
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    ports:
-      - '8080:80'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-
 volumes:
   rag_postgres_data:
   rag_qdrant_storage:

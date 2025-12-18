@@ -1,13 +1,14 @@
 import { QdrantVectorStore } from '@langchain/qdrant';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import dotenv from 'dotenv';
 dotenv.config({ quiet: true });
 
-export async function search(query, topK = 5) {
+export async function search({query, topK = 5}) {
+  console.log(`Searching for: "${query}" with topK: ${topK}`);
   try {
-    const embeddings = new OpenAIEmbeddings({
-      model: 'text-embedding-3-small',
-      apiKey: process.env.OPENAI_API_KEY,
+    const embeddings = new GoogleGenerativeAIEmbeddings({
+      model: 'text-embedding-004',
+      apiKey: process.env.GOOGLE_API_KEY,
     });
 
     const vectorStore = await QdrantVectorStore.fromExistingCollection(

@@ -1,23 +1,23 @@
 import { QdrantVectorStore } from '@langchain/qdrant';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import dotenv from 'dotenv';
 
 dotenv.config({ quiet: true });
 
-const embeddings = new OpenAIEmbeddings({
-  model: 'text-embedding-3-small',
-  apiKey: process.env.OPENAI_API_KEY,
+const embeddings = new GoogleGenerativeAIEmbeddings({
+  model: 'text-embedding-004',
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
-export async function embedAndStore(docs, docId, userId) {
+export async function embedAndStore(docs, fileId, notebookId, userId) {
   const client = new QdrantClient({
     url: process.env.QDRANT_URL || 'http://localhost:6333',
   });
 
   const docsWithMeta = docs.map((doc) => ({
     ...doc,
-    metadata: { ...doc.metadata, docId, userId },
+    metadata: { ...doc.metadata, fileId, notebookId, userId },
   }));
 
   const vectorStore = await QdrantVectorStore.fromDocuments(
@@ -29,6 +29,6 @@ export async function embedAndStore(docs, docId, userId) {
     }
   );
 
-  console.log('Data embedded and stored successfully.', docId);
+  console.log('Data embedded and stored successfully.', fileId);
   return vectorStore;
 }

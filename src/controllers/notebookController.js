@@ -1,5 +1,6 @@
 import * as notebookModel from '../models/notebookModel.js';
 
+// Create a new notebook
 export const createNotebook = async (req, res) => {
   try {
     const { title, description } = req.body;
@@ -21,6 +22,7 @@ export const createNotebook = async (req, res) => {
   }
 };
 
+// Get all notebooks for a user
 export const getNotebooks = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -31,6 +33,7 @@ export const getNotebooks = async (req, res) => {
   }
 };
 
+// Get a specific notebook by ID
 export const getNotebookById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,6 +51,7 @@ export const getNotebookById = async (req, res) => {
   }
 };
 
+// Update a specific notebook by ID
 export const updateNotebook = async (req, res) => {
   try {
     const { id } = req.params;
@@ -70,6 +74,7 @@ export const updateNotebook = async (req, res) => {
   }
 };
 
+// Delete a specific notebook by ID
 export const deleteNotebook = async (req, res) => {
   try {
     const { id } = req.params;

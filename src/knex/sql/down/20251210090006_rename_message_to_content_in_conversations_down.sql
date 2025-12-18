@@ -1,0 +1,1 @@
+ALTER TABLE ragapp.conversations RENAME COLUMN IF EXISTS  content TO message;

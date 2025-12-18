@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import {
   addUser,
@@ -13,6 +12,7 @@ dotenv.config();
 
 import { generateTokens, cookieOptions } from '../utils/tokenUtils.js';
 
+// Register a new user
 export const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, email, password, userId } = req.body;
@@ -53,6 +53,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// Login an existing user
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -96,6 +97,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+// Logout the current user
 export const logoutUser = async (req, res) => {
   try {
     const refreshToken = req.cookies.refresh_token;
@@ -110,15 +112,34 @@ export const logoutUser = async (req, res) => {
   }
 };
 
+// Delete the current user
 export const deleteUser = async (req, res) => {
   try {
-    // req.user is populated by passport middleware
     const userId = req.user.id;
     await deleteAllRefreshTokensForUser(userId);
     await dbDeleteUser(userId);
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');
     res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get current authenticated user
+export const getMe = async (req, res) => {
+  try {
+    const user = req.user;
+
+    res.status(200).json({
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        userId: user.user_id,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

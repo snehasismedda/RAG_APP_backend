@@ -9,6 +9,7 @@ Base URL: `http://localhost:8000`
 **Use:** Register a new user account
 
 **Request Body:**
+
 ```json
 {
   "firstName": "string",
@@ -20,6 +21,7 @@ Base URL: `http://localhost:8000`
 ```
 
 **Response (201):**
+
 ```json
 {
   "user": {
@@ -39,6 +41,7 @@ Base URL: `http://localhost:8000`
 **Use:** Login and get auth cookies
 
 **Request Body:**
+
 ```json
 {
   "email": "string",
@@ -47,6 +50,7 @@ Base URL: `http://localhost:8000`
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": {
@@ -58,7 +62,8 @@ Base URL: `http://localhost:8000`
   }
 }
 ```
-*Sets `jwt` and `refresh_token` cookies*
+
+_Sets `jwt` and `refresh_token` cookies_
 
 ---
 
@@ -77,8 +82,39 @@ Base URL: `http://localhost:8000`
 **Auth:** Required
 
 **Response (200):**
+
 ```json
 {
   "message": "User deleted successfully"
+}
+```
+
+---
+
+## GET /user/me
+
+**Use:** Get current authenticated user
+
+**Auth:** Required (JWT cookie)
+
+**Response (200):**
+
+```json
+{
+  "user": {
+    "id": "272417636470979915",
+    "email": "john@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "userId": "johndoe123"
+  }
+}
+```
+
+**Response (401):**
+
+```json
+{
+  "error": "Unauthorized"
 }
 ```

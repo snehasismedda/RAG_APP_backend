@@ -6,6 +6,7 @@ import {
   getChatById,
   updateChat,
   deleteChat,
+  getConversations,
 } from '../controllers/chatController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
@@ -23,5 +24,8 @@ router.get('/notebook/:notebookId', getChats);
 router.get('/:id', getChatById);
 router.put('/:id', updateChat);
 router.delete('/:id', deleteChat);
+
+// Conversation history endpoint
+router.get('/conversation/:chatId', getConversations);
 
 export default router;

@@ -12,7 +12,7 @@ export const generateResponse = async (data) => {
     const {
       query,
       history,
-      modelId = 'gemini-2.5-flash',
+      modelId = 'gemini-2.0-flash',
       temperature = 0.7,
       maxOutputTokens = 1024,
       systemInstruction = 'You are a helpful assistant.',

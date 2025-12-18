@@ -10,6 +10,7 @@ Auth: All routes require JWT cookie
 **Use:** Create a new notebook
 
 **Request Body:**
+
 ```json
 {
   "title": "string",
@@ -18,6 +19,7 @@ Auth: All routes require JWT cookie
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "272417636470979915",
@@ -37,6 +39,7 @@ Auth: All routes require JWT cookie
 **Use:** Get all notebooks for current user
 
 **Response (200):**
+
 ```json
 [
   {
@@ -56,9 +59,11 @@ Auth: All routes require JWT cookie
 **Use:** Get notebook by ID
 
 **URL Params:**
+
 - `id` - Notebook ID
 
 **Response (200):**
+
 ```json
 {
   "id": "272417636470979915",
@@ -76,9 +81,11 @@ Auth: All routes require JWT cookie
 **Use:** Update notebook
 
 **URL Params:**
+
 - `id` - Notebook ID
 
 **Request Body:**
+
 ```json
 {
   "title": "string (optional)",
@@ -95,9 +102,11 @@ Auth: All routes require JWT cookie
 **Use:** Delete notebook (soft delete)
 
 **URL Params:**
+
 - `id` - Notebook ID
 
 **Response (200):**
+
 ```json
 {
   "message": "Notebook deleted successfully"

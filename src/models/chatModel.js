@@ -43,11 +43,8 @@ export const updateChat = async (id, data, userId) => {
 };
 
 export const deleteChat = async (id, userId) => {
-  return db('ragapp.chats')
-    .where('id', id)
-    .where('fk_user_id', userId)
-    .update({
-      is_deleted: true,
-      deleted_at: new Date(),
-    });
+  return db('ragapp.chats').where('id', id).where('fk_user_id', userId).update({
+    is_deleted: true,
+    deleted_at: new Date(),
+  });
 };
