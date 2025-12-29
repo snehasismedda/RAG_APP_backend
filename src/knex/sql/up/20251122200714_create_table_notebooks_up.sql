@@ -5,6 +5,6 @@ create table if not exists ragapp.notebooks(
     fk_user_id bigint,
     is_deleted boolean default false,
     created_at timestamp default current_timestamp,
-    updated_at timestamp,
+    updated_at timestamp default current_timestamp,
     deleted_at timestamp
 );

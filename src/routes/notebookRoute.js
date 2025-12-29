@@ -2,7 +2,7 @@ import express from 'express';
 import {
   createNotebook,
   getNotebooks,
-  getNotebookById,
+  getNotebookContent,
   updateNotebook,
   deleteNotebook,
 } from '../controllers/notebookController.js';
@@ -15,8 +15,8 @@ router.use(authenticate);
 
 router.post('/', createNotebook);
 router.get('/', getNotebooks);
-router.get('/:id', getNotebookById);
-router.put('/:id', updateNotebook);
+router.get('/:id', getNotebookContent);
+router.patch('/:id', updateNotebook);
 router.delete('/:id', deleteNotebook);
 
 export default router;

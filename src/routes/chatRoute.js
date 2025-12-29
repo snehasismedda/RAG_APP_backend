@@ -12,7 +12,6 @@ import { authenticate } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// All chat routes require authentication
 router.use(authenticate);
 
 // Chat message endpoint
@@ -20,12 +19,8 @@ router.post('/', chat);
 
 // Chat CRUD operations
 router.post('/create', createChat);
-router.get('/notebook/:notebookId', getChats);
-router.get('/:id', getChatById);
-router.put('/:id', updateChat);
+router.get('/:chatId', getConversations);
+router.patch('/:id', updateChat);
 router.delete('/:id', deleteChat);
-
-// Conversation history endpoint
-router.get('/conversation/:chatId', getConversations);
 
 export default router;

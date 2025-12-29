@@ -1,16 +1,18 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
-import { ingestFile, ingestUrl, ingestText } from '../controllers/ingestionController.js';
-import upload from '../middleware/multer.js';
+import { ingestFile, ingestUrl, ingestText, testMulterIngestion, uploadMiddleware } from '../controllers/ingestionController.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 // /ingest/file
-router.post("/file",upload.array("file", 5), ingestFile);
+router.post("/file/completed", ingestFile);
 // /ingest/url
-router.post("/url", ingestUrl);
+router.post("/url/completed", ingestUrl);
 // /ingest/text
-router.post("/text", ingestText);
+router.post("/text/completed", ingestText);
+
+// TEST ROUTE: /ingest/test-multer
+router.post("/test-multer", uploadMiddleware, testMulterIngestion);
 
 export default router;

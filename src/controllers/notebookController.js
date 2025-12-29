@@ -1,4 +1,6 @@
 import * as notebookModel from '../models/notebookModel.js';
+import * as chatModel from '../models/chatModel.js';
+import * as fileModel from '../models/fileModel.js';
 
 // Create a new notebook
 export const createNotebook = async (req, res) => {
@@ -9,13 +11,7 @@ export const createNotebook = async (req, res) => {
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
     }
-
-    const notebook = await notebookModel.createNotebook({
-      title,
-      description,
-      userId,
-    });
-
+    const notebook = await notebookModel.createNotebook({ title, description, userId });
     res.status(201).json(notebook);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -26,7 +22,7 @@ export const createNotebook = async (req, res) => {
 export const getNotebooks = async (req, res) => {
   try {
     const userId = req.user.id;
-    const notebooks = await notebookModel.getNotebooks(userId);
+    const notebooks = await notebookModel.getNotebooks({ userId });
     res.status(200).json(notebooks);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,18 +30,24 @@ export const getNotebooks = async (req, res) => {
 };
 
 // Get a specific notebook by ID
-export const getNotebookById = async (req, res) => {
+export const getNotebookContent = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const notebook = await notebookModel.getNotebookById(id, userId);
+    const promises = [
+      notebookModel.getNotebookById({ id, userId }),
+      chatModel.getChats({ notebookId: id, userId }),
+      fileModel.getFiles({ notebookId: id, userId })
+    ];
+    const [notebook, chats, files] = await Promise.all(promises);
+
 
     if (!notebook) {
       return res.status(404).json({ error: 'Notebook not found' });
     }
 
-    res.status(200).json(notebook);
+    res.status(200).json({ notebook, chats, files });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -6,9 +6,10 @@ create table if not exists ragapp.files(
     fk_user_id bigint,
     mime_type text,
     file_size bigint,
-    status text default 'PENDING',
+    status text default 'PENDING', --'PENDING', 'UPLOADED', 'PROCESSING', 'EMBEDDED', 'FAILED'
     is_deleted boolean default false,
     created_at timestamp default current_timestamp,
-    updated_at timestamp,
+    updated_at timestamp default current_timestamp,
     deleted_at timestamp
 );
+

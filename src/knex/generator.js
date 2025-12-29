@@ -15,10 +15,6 @@ for (let i = 0; i < args.length; i++) {
     migrationName = args[i + 1];
     break;
   }
-  // Handle case where npm passes 'user_table' as a positional arg even if --filename was intended for the script but consumed by npm
-  // But wait, if the user types `npm run migrate:create --filename user_table`, npm might consume --filename and pass nothing or pass user_table?
-  // Actually, `npm run script --flag value` -> script receives `value` if the flag matches an npm config, or it might just pass it through.
-  // Let's support finding the first non-flag argument as the name if no flag is found.
 }
 
 if (!migrationName) {

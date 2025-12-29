@@ -48,7 +48,7 @@ const _generateGeminiAiResponse = async (data, conversationsToSave = []) => {
           metadata: {},
         });
 
-        console.log("::CONVERSATIONS:: ",conversationsToSave);
+        console.log("::CONVERSATIONS:: ", conversationsToSave);
 
         await saveConversations({
           conversations: conversationsToSave,
@@ -81,7 +81,12 @@ const _generateGeminiAiResponse = async (data, conversationsToSave = []) => {
           }
 
           try {
-            const result = await tool(toolArgs);
+            const result = await tool({
+              ...toolArgs,
+              userId: data.userId,
+              notebookId: data.notebookId,
+              fileIds: data.fileIds,
+            });
             return {
               functionResponse: {
                 name: toolName,

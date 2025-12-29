@@ -11,14 +11,23 @@ services:
     image: postgres:16
     container_name: postgres
     environment:
-      POSTGRES_USER: snehasis
-      POSTGRES_PASSWORD: snehasis123
-      POSTGRES_DB: ragdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - '5432:5432'
     volumes:
       - rag_postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - rag_redis_data:/data
+
 volumes:
   rag_postgres_data:
   rag_qdrant_storage:
+  rag_redis_data:

@@ -1,7 +1,7 @@
 import db from '../knex/db.js';
 
 export const createNotebook = async ({ title, description, userId }) => {
-  const [result] = await db('ragapp.notebooks')
+  const result = await db('ragapp.notebooks')
     .insert({
       title,
       description,
@@ -11,15 +11,15 @@ export const createNotebook = async ({ title, description, userId }) => {
   return result;
 };
 
-export const getNotebooks = async (userId) => {
+export const getNotebooks = async ({ userId }) => {
   return db('ragapp.notebooks')
-    .select('id', 'title', 'description', 'created_at', 'updated_at')
+    .select('id', 'title', 'description', 'updated_at')
     .where('fk_user_id', userId)
     .where('is_deleted', false)
-    .orderBy('created_at', 'desc');
+    .orderBy('updated_at', 'desc');
 };
 
-export const getNotebookById = async (id, userId) => {
+export const getNotebookById = async ({ id, userId }) => {
   return db('ragapp.notebooks')
     .select('id', 'title', 'description', 'created_at', 'updated_at')
     .where('id', id)

@@ -5,20 +5,20 @@ import {
   getConversationHistory,
 } from '../models/conversationModel.js';
 import * as chatModel from '../models/chatModel.js';
+import { getSystemPrompt } from '../models/systemPromptModel.js';
 
 // Send message and store conversation
 export const chat = async (req, res) => {
   try {
     const {
       query,
-      model,
-      modelId,
-      temperature,
-      maxOutputTokens,
-      systemInstruction,
       notebookId,
       chatId,
+      aiData,
+      fileIds
     } = req.body;
+
+    const { model, modelId, promptKey, version, temperature, maxOutputTokens } = aiData;
 
     const userId = req.user?.id;
 
@@ -29,20 +29,24 @@ export const chat = async (req, res) => {
     if (!chatId) {
       return res.status(400).json({ error: 'Chat ID is required' });
     }
-
-    const history = await prepareHistory({ notebookId, chatId, model });
-    console.log("::HISTORY:: ",JSON.stringify(history, null, 2));
+    const promises = [
+      getSystemPrompt({ promptKey, version }),
+      prepareHistory({ notebookId, chatId, model })
+    ];
+    const [systemInstruction, history] = await Promise.all(promises);
+    console.log("::HISTORY:: ", JSON.stringify(history, null, 2));
     const response = await generateResponse({
       query,
+      notebookId,
+      chatId,
+      userId,
       model,
       modelId,
-      temperature,
-      maxOutputTokens,
       systemInstruction,
       history,
-      chatId,
-      notebookId,
-      userId,
+      temperature,
+      maxOutputTokens,
+      fileIds,
     });
 
     res.status(200).json({ response });
@@ -110,7 +114,7 @@ export const updateChat = async (req, res) => {
     const { title } = req.body;
     const userId = req.user.id;
 
-    const chat = await chatModel.updateChat(id, { title }, userId);
+    const chat = await chatModel.updateChat({ id, userId, data: { title } });
 
     if (!chat) {
       return res.status(404).json({ error: 'Chat not found' });
@@ -128,7 +132,7 @@ export const deleteChat = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const result = await chatModel.deleteChat(id, userId);
+    const result = await chatModel.deleteChat({ id, userId });
 
     if (result === 0) {
       return res.status(404).json({ error: 'Chat not found' });
@@ -143,24 +147,13 @@ export const deleteChat = async (req, res) => {
 
 export const getConversations = async (req, res) => {
   try {
-    const { chatId } = req.params;
+    const { chatId, notebookId } = req.params;
     const userId = req.user.id;
 
-    const chat = await chatModel.getChatById(chatId, userId);
-
-    if (!chat) {
-      return res.status(404).json({ error: 'Chat not found' });
-    }
-
-    const conversations = await getConversationHistory({
-      chatId,
-      notebookId: chat.fk_notebook_id,
-      userId: chat.fk_user_id,
-    });
+    const conversations = await getConversationHistory({ chatId, notebookId, userId });
 
     const filteredConversations = conversations.filter((conversation) => conversation.content !== '');
 
-    console.log(JSON.stringify(filteredConversations, null, 2));
     res.status(200).json(filteredConversations);
   } catch (error) {
     res.status(500).json({ error: error.message });

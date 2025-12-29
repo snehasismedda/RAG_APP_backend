@@ -1,10 +1,10 @@
-import { search } from '../../vectorService.js';
+import { search } from '../../vector_service/vectorSearch.js';
 
-async function execute({ query, topK = 5 }) {
+async function execute({ query, topK = 5, userId, notebookId, fileIds = [] }) {
   console.log(
-    `[Tool: vectorSearch] Searching for: "${query}" with topK: ${topK}`
+    `[Tool: vectorSearch] Searching for queries: ${JSON.stringify(query)} with topK: ${topK}`
   );
-  const results = await search(query, topK);
+  const results = await search({ query, topK, userId, notebookId, fileIds });
   return results;
 }
 
@@ -17,9 +17,12 @@ export const vectorSearchTool = {
       type: 'object',
       properties: {
         query: {
-          type: 'string',
+          oneOf: [
+            { type: 'string' },
+            { type: 'array', items: { type: 'string' } },
+          ],
           description:
-            'A natural language query for similarity search.',
+            'A natural language query or an array of queries for similarity search.',
         },
         topK: {
           type: 'number',

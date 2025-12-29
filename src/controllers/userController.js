@@ -8,7 +8,7 @@ import {
   deleteAllRefreshTokensForUser,
 } from '../models/userModel.js';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 import { generateTokens, cookieOptions } from '../utils/tokenUtils.js';
 
@@ -41,14 +41,14 @@ export const registerUser = async (req, res) => {
     res.cookie('jwt', accessToken, {
       ...cookieOptions,
       maxAge: 15 * 60 * 1000,
-    }); // 15m
-    res.cookie('refresh_token', refreshToken, cookieOptions);
+    });
 
+    res.cookie('refresh_token', refreshToken, cookieOptions);
+    const { hash_password, ...userWithoutPassword } = user;
     res.status(201).json({
-      user: { ...user, id },
+      user: { ...userWithoutPassword, id },
     });
   } catch (error) {
-    console.error('Register Error:', error);
     res.status(500).json({ error: error.message });
   }
 };

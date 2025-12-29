@@ -3,3 +3,4 @@ node_modules
 .antigravity
 uploads
 types
+logs/
