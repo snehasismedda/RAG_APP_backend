@@ -35,8 +35,10 @@ export const getHeadObject = async (key) => {
     const command = new HeadObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: key,
+        xAmzChecksumMode: 'ENABLED',
     });
 
     const response = await s3Client.send(command);
+    console.log(response);
     return response;
 };

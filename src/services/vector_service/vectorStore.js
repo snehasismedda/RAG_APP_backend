@@ -10,18 +10,13 @@ const embeddings = new GoogleGenerativeAIEmbeddings({
   apiKey: process.env.GOOGLE_API_KEY,
 });
 
-export async function embedAndStore(docs, fileId, notebookId, userId) {
+export async function embedAndStore(docs) {
   const client = new QdrantClient({
     url: process.env.QDRANT_URL || 'http://localhost:6333',
   });
 
-  const docsWithMeta = docs.map((doc) => ({
-    ...doc,
-    metadata: { ...doc.metadata, fileId, notebookId, userId },
-  }));
-
   const vectorStore = await QdrantVectorStore.fromDocuments(
-    docsWithMeta,
+    docs,
     embeddings,
     {
       client,
@@ -29,6 +24,5 @@ export async function embedAndStore(docs, fileId, notebookId, userId) {
     }
   );
 
-  console.log('Data embedded and stored successfully.', fileId);
   return vectorStore;
 }

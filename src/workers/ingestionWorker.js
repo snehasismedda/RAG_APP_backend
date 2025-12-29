@@ -1,77 +1,95 @@
 import { Worker } from 'bullmq';
 import redisConfig from '../config/redis.js';
-import { loadFile } from '../utils/fileLoader.js';
-import { loadUrl } from '../utils/urlLoader.js';
 import { embedAndStore } from '../services/vector_service/vectorStore.js';
-import { updateFileStatus } from '../models/fileModel.js';
+import { updateFile } from '../models/fileModel.js';
 import { getObjectStream } from '../services/aws_service/s3Service.js';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import { pipeline } from 'stream/promises';
+import {
+    readTextStream,
+    extractPdfText,
+    extractDocxText,
+    cleanText,
+    semanticChunk,
+    loadUrl,
+} from '../utils/textExtractor.js';
 
 const worker = new Worker(
     'ingestion-queue',
     async (job) => {
         const { type, fileId, notebookId, userId, data } = job.data;
         console.log(`Processing job ${job.id} of type ${type} for file ${fileId}`);
+        if (type === 'FILE') {
+            const { mimeType, objectKey, fileName } = data;
 
-        let tempFilePath = null;
-        try {
-            await updateFileStatus(fileId, 'PROCESSING');
+            // Step 1: Get file stream from S3
+            const fileStream = await getObjectStream(objectKey);
 
-            let docs;
-            if (type === 'FILE') {
-                const { objectKey, mimeType } = data;
-                const stream = await getObjectStream(objectKey);
-                tempFilePath = path.join(os.tmpdir(), `ingest_${fileId}_${Date.now()}`);
-                await pipeline(stream, fs.createWriteStream(tempFilePath));
-                docs = await loadFile(tempFilePath, mimeType);
-            } else if (type === 'URL') {
-                docs = await loadUrl(data.url);
-            } else if (type === 'TEXT') {
-                // For text, it's already a local file created in the controller
-                docs = await loadFile(data.filePath, data.mimeType);
-                tempFilePath = data.filePath; // So it gets cleaned up if desired, though controller puts it in uploads/
-            }
+            // Step 2: File-type detection & text extraction
+            let rawText = '';
 
-            if (docs && docs.length > 0) {
-                await embedAndStore(docs, fileId, notebookId, userId);
-                await updateFileStatus(fileId, 'COMPLETED');
+            if (mimeType.includes('text') || mimeType.includes('markdown')) {
+                rawText = await readTextStream(fileStream);
+            } else if (mimeType.includes('pdf')) {
+                rawText = await extractPdfText(fileStream);
+            } else if (mimeType.includes('doc') || mimeType.includes('msword') ||
+                mimeType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+                rawText = await extractDocxText(fileStream);
             } else {
-                throw new Error('No documents found to process');
+                throw new Error(`Unsupported file type: ${mimeType}`);
             }
 
-            // Cleanup temp file if it was created in tmp dir or if it was a TEXT job where we want to cleanup
-            if (tempFilePath && fs.existsSync(tempFilePath) && (type === 'FILE' || type === 'TEXT')) {
-                try {
-                    fs.unlinkSync(tempFilePath);
-                } catch (unlinkErr) {
-                    console.error(`Failed to delete temp file ${tempFilePath}:`, unlinkErr);
-                }
-            }
-        } catch (error) {
-            console.error(`Error in worker for job ${job.id}:`, error);
-            await updateFileStatus(fileId, 'FAILED');
+            // Step 3: Clean text
+            const cleanedText = cleanText(rawText);
 
-            // Cleanup on error
-            if (tempFilePath && fs.existsSync(tempFilePath) && (type === 'FILE' || type === 'TEXT')) {
-                try {
-                    fs.unlinkSync(tempFilePath);
-                } catch (unlinkErr) {
-                    console.error(`Failed to delete temp file ${tempFilePath}:`, unlinkErr);
-                }
-            }
-            throw error;
+            // Step 4: Semantic chunking (returns LangChain documents with all metadata)
+            const chunks = await semanticChunk(cleanedText, {
+                source: fileName || objectKey,
+                fileId,
+                notebookId,
+                userId,
+                mimeType
+            });
+
+            // Step 5: Generate embeddings and store
+            await embedAndStore(chunks);
+
+            return { isSuccess: true, message: 'File ingested successfully' };
         }
+
+        if (type === 'URL') {
+            const { url } = data;
+
+            // loadUrl returns array of docs, extract text from pageContent
+            const docs = await loadUrl(url);
+            const rawText = docs.map(doc => doc.pageContent).join('\n');
+            const cleanedText = cleanText(rawText);
+
+            const chunks = await semanticChunk(cleanedText, {
+                source: url,
+                fileId,
+                notebookId,
+                userId,
+                mimeType: 'text/html'
+            });
+            await embedAndStore(chunks);
+            return { isSuccess: true, message: 'URL ingested successfully' };
+        }
+
+        throw new Error(`Unknown job type: ${type}`);
     },
     {
         connection: redisConfig,
     }
 );
 
-worker.on('completed', (job) => {
-    console.log(`Job ${job.id} completed successfully`);
+worker.on('completed', async (job) => {
+    const result = await updateFile({
+        id: job.data.fileId,
+        userId: job.data.userId,
+        processingStartedAt: new Date(job.processedOn),
+        processingCompletedAt: new Date(job.finishedOn),
+        status: 'INGESTED',
+    })
+    console.log(`Job ${job.id} completed successfully`, result);
 });
 
 worker.on('failed', (job, err) => {

@@ -17,10 +17,16 @@ export const saveFile = async (data) => {
     return _.first(result);
 }
 
-export const updateFileStatus = async (id, status) => {
+export const updateFile = async (data) => {
     return db('ragapp.files')
-        .where('id', id)
-        .update({ status, updated_at: db.fn.now() });
+        .where('id', data.id)
+        .where('fk_user_id', data.userId)
+        .update({
+            processing_started_at: data.processingStartedAt,
+            processing_completed_at: data.processingCompletedAt,
+            status: data.status,
+            updated_at: db.fn.now()
+        });
 }
 
 export const getFiles = async ({ notebookId, userId }) => {
@@ -30,4 +36,13 @@ export const getFiles = async ({ notebookId, userId }) => {
         .where('fk_user_id', userId)
         .where('is_deleted', false)
         .orderBy('created_at', 'desc');
+}
+
+export const getFileStatus = async ({ fileId, userId }) => {
+    return db('ragapp.files')
+        .select('status')
+        .where('id', fileId)
+        .where('fk_user_id', userId)
+        .where('is_deleted', false)
+        .first();
 }

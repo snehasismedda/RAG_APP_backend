@@ -1,9 +1,4 @@
-import { saveFile } from "../models/fileModel.js";
-import { loadFile } from "../utils/fileLoader.js";
-import { loadUrl } from "../utils/urlLoader.js";
-import { embedAndStore } from "../services/vector_service/vectorStore.js";
-import path from "path";
-import fs from "fs";
+import { saveFile, getFileStatus } from "../models/fileModel.js";
 import { getHeadObject } from "../services/aws_service/s3Service.js";
 import { ingestionQueue } from "../queues/ingestionQueue.js";
 import multer from 'multer';
@@ -13,7 +8,6 @@ export const uploadMiddleware = upload.single('file');
 
 export const ingestFile = async (req, res) => {
   try {
-
     const { objectKey, fileType, fileSize, fileName, notebookId, storageProvider } = req.body;
     const userId = req.user.id;
 
@@ -56,110 +50,64 @@ export const ingestFile = async (req, res) => {
       }
     });
 
-    return res.status(200).json({ fileData });
+    return res.status(200).json({ isSuccess: true, message: "File ingestion queued", fileId: fileData.id });
 
   } catch (error) {
     console.error("Error ingesting file:", error);
-    return res.status(500).json({ error: "Failed to ingest file" });
+    return res.status(500).json({ isSuccess: false, error: "Failed to ingest file" });
   }
 }
 
 export const ingestUrl = async (req, res) => {
   try {
-    console.log("Processing URL:",);
-    const { url } = req.body;
+    const { url, notebookId } = req.body;
     const userId = req.user.id;
 
-    if (!url) {
-      return res.status(400).json({ error: "No URL provided" });
+    if (!url || !notebookId) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    let fileData;
-    try {
-      fileData = await saveFile({
-        fileName: url,
-        objectKey: url,
-        storageProvider: 'url',
-        mimeType: "text/html",
-        userId: userId,
-        notebookId: req.body.notebookId || null
-      });
-    } catch (err) {
-      return res.status(500).json({ error: "Saving file failed: " + err.message });
-    }
+    const fileData = await saveFile({
+      fileName: `${userId}_${Date.now()}_url`,
+      objectKey: url,
+      storageProvider: null,
+      mimeType: "text/html",
+      userId: userId,
+      notebookId: notebookId
+    });
 
     await ingestionQueue.add('process-url', {
       type: 'URL',
       fileId: fileData.id,
-      notebookId: req.body.notebookId,
+      notebookId: notebookId,
       userId,
       data: { url }
     });
 
-    return res.status(201).json({ status: "success", message: "URL ingestion queued", fileId: fileData.id });
+    return res.status(201).json({ isSuccess: true, message: "URL ingestion queued", fileId: fileData.id });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ isSuccess: false, error: err.message });
   }
 }
 
-
-export const ingestText = async (req, res) => {
+export const fetchFileStatus = async (req, res) => {
   try {
-    const { text } = req.body;
+    const { fileId } = req.params;
     const userId = req.user.id;
-    if (!text) {
-      return res.status(400).json({ error: "No text provided" });
-    }
-    const uploadsDir = path.join(process.cwd(), "uploads");
-    console.log("Uploads directory:", uploadsDir);
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
 
-    // Create a filename (could include userId + timestamp for uniqueness)
-    const fileName = `${userId || "guest"}_${Date.now()}.txt`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    // Write the text into the file
-    fs.writeFileSync(filePath, text, "utf-8");
-
-    const fileData = await saveFile({
-      fileName: fileName,
-      objectKey: `uploads/${fileName}`,
-      storageProvider: 'local',
-      mimeType: "text/plain",
-      userId: userId,
-      notebookId: req.body.notebookId || null
-    });
-
-    await ingestionQueue.add('process-text', {
-      type: 'TEXT',
-      fileId: fileData.id,
-      notebookId: req.body.notebookId,
-      userId,
-      data: {
-        filePath,
-        mimeType: "text/plain"
-      }
-    });
-
-    res.status(201).json({
-      message: "Text ingestion queued",
-      fileId: fileData.id,
-      fileName,
-    });
+    const fileData = await getFileStatus({ fileId, userId });
+    return res.status(200).json({ isSuccess: true, message: "File status retrieved", data: fileData });
   } catch (err) {
-    console.error("Error saving text:", err);
-    res.status(500).json({ error: "Failed to save text" });
+    return res.status(500).json({ isSuccess: false, error: err.message });
   }
-};
+}
 
 export const testMulterIngestion = async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      return res.status(400).json({ isSuccess: false, error: "No file uploaded" });
     }
 
     const { originalname, mimetype, size, path: filePath } = file;
@@ -175,6 +123,6 @@ export const testMulterIngestion = async (req, res) => {
 
   } catch (error) {
     console.error("Error in testMulterIngestion:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ isSuccess: false, error: error.message });
   }
 };
