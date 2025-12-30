@@ -1,6 +1,7 @@
 import * as notebookModel from '../models/notebookModel.js';
 import * as chatModel from '../models/chatModel.js';
 import * as fileModel from '../models/fileModel.js';
+import { deletionQueue } from '../queues/index.js';
 
 // Create a new notebook
 export const createNotebook = async (req, res) => {
@@ -22,7 +23,7 @@ export const createNotebook = async (req, res) => {
 export const getNotebooks = async (req, res) => {
   try {
     const userId = req.user.id;
-    const notebooks = await notebookModel.getNotebooks({ userId });
+    const notebooks = await notebookModel.getNotebooksByUserIds({ userIds: [userId] });
     res.status(200).json(notebooks);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,9 +37,9 @@ export const getNotebookContent = async (req, res) => {
     const userId = req.user.id;
 
     const promises = [
-      notebookModel.getNotebookById({ id, userId }),
-      chatModel.getChats({ notebookId: id, userId }),
-      fileModel.getFiles({ notebookId: id, userId })
+      notebookModel.getNotebooksByIds({ notebookIds: [id], userId }),
+      chatModel.getChatsByNotebookIds({ notebookIds: [id], userId }),
+      fileModel.getFilesByNotebookIds({ notebookIds: [id], userId })
     ];
     const [notebook, chats, files] = await Promise.all(promises);
 
@@ -60,11 +61,11 @@ export const updateNotebook = async (req, res) => {
     const { title, description } = req.body;
     const userId = req.user.id;
 
-    const notebook = await notebookModel.updateNotebook(
-      id,
-      { title, description },
+    const notebook = await notebookModel.updateNotebookById({
+      notebookId: id,
+      updates: { title, description },
       userId
-    );
+    });
 
     if (!notebook) {
       return res.status(404).json({ error: 'Notebook not found' });
@@ -82,11 +83,11 @@ export const deleteNotebook = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const result = await notebookModel.deleteNotebook(id, userId);
-
-    if (result === 0) {
-      return res.status(404).json({ error: 'Notebook not found' });
-    }
+    deletionQueue.add('DELETE_NOTEBOOK', {
+      type: 'DELETE_NOTEBOOK',
+      notebookId: id,
+      userId
+    });
 
     res.status(200).json({ message: 'Notebook deleted successfully' });
   } catch (error) {

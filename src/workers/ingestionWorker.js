@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import redisConfig from '../config/redis.js';
 import { embedAndStore } from '../services/vector_service/vectorStore.js';
-import { updateFile } from '../models/fileModel.js';
+import { updateFileById } from '../models/fileModel.js';
 import { getObjectStream } from '../services/aws_service/s3Service.js';
 import {
     readTextStream,
@@ -82,8 +82,8 @@ const worker = new Worker(
 );
 
 worker.on('completed', async (job) => {
-    const result = await updateFile({
-        id: job.data.fileId,
+    const result = await updateFileById({
+        fileId: job.data.fileId,
         userId: job.data.userId,
         processingStartedAt: new Date(job.processedOn),
         processingCompletedAt: new Date(job.finishedOn),

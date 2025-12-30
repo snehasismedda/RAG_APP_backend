@@ -13,7 +13,7 @@ import chatRoutes from './routes/chatRoute.js';
 import notebookRoutes from './routes/notebookRoute.js';
 import ingestRoutes from './routes/ingestRoute.js';
 import awsRoutes from './routes/awsRoute.js';
-import './workers/ingestionWorker.js';
+import * as workers from './workers/index.js';
 
 const app = express();
 

@@ -24,13 +24,13 @@ export async function search({ query, topK = 5, userId, fileIds = [], notebookId
     );
 
     const must = [
-      { key: 'userId', match: { value: userId } },
-      { key: 'notebookId', match: { value: notebookId } },
+      { key: 'metadata.userId', match: { value: userId } },
+      { key: 'metadata.notebookId', match: { value: notebookId } },
     ];
 
     if (fileIds && fileIds.length > 0) {
       must.push({
-        key: 'fileId',
+        key: 'metadata.fileId',
         match: { any: fileIds },
       });
     }
@@ -39,11 +39,10 @@ export async function search({ query, topK = 5, userId, fileIds = [], notebookId
 
     // Execute searches for all queries in parallel
     const searchPromises = queries.map((q) =>
-      vectorStore.similaritySearchWithScore(q, topK, { filter })
+      vectorStore.similaritySearchWithScore(q, topK, filter)
     );
 
     const resultsWithScores = await Promise.all(searchPromises);
-
     // Flatten results and deduplicate
     const allResults = resultsWithScores.flat();
 

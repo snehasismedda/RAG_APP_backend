@@ -3,10 +3,11 @@ import dotenv from 'dotenv';
 import {
   addUser,
   findUserByEmail,
-  deleteRefreshToken,
-  deleteUser as dbDeleteUser,
-  deleteAllRefreshTokensForUser,
+  deleteRefreshTokensByToken,
+  deleteAllRefreshTokensByUserId,
+  deleteUsersByIds,
 } from '../models/userModel.js';
+import { deletionQueue } from '../queues/index.js';
 
 dotenv.config({ quiet: true });
 
@@ -15,28 +16,27 @@ import { generateTokens, cookieOptions } from '../utils/tokenUtils.js';
 // Register a new user
 export const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, userId } = req.body;
+    const { firstName, lastName, email, password, userName } = req.body;
 
-    if (!firstName || !lastName || !email || !password || !userId) {
+    if (!firstName || !lastName || !email || !password || !userName) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await findUserByEmail({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const user = {
+
+    const user = await addUser({
       firstName,
       lastName,
       email,
       password: hashedPassword,
-      userId,
-    };
-
-    const id = await addUser(user);
-    const { accessToken, refreshToken } = await generateTokens(id);
+      userName,
+    });
+    const { accessToken, refreshToken } = await generateTokens(user.id);
 
     res.cookie('jwt', accessToken, {
       ...cookieOptions,
@@ -44,9 +44,8 @@ export const registerUser = async (req, res) => {
     });
 
     res.cookie('refresh_token', refreshToken, cookieOptions);
-    const { hash_password, ...userWithoutPassword } = user;
     res.status(201).json({
-      user: { ...userWithoutPassword, id },
+      id: user.id
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,8 +60,7 @@ export const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmail({ email });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -88,7 +86,7 @@ export const loginUser = async (req, res) => {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        userId: user.user_id,
+        userName: user.user_name,
       },
     });
   } catch (error) {
@@ -102,7 +100,7 @@ export const logoutUser = async (req, res) => {
   try {
     const refreshToken = req.cookies.refresh_token;
     if (refreshToken) {
-      await deleteRefreshToken(refreshToken);
+      await deleteRefreshTokensByToken(refreshToken);
     }
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');
@@ -116,8 +114,10 @@ export const logoutUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.user.id;
-    await deleteAllRefreshTokensForUser(userId);
-    await dbDeleteUser(userId);
+    await deletionQueue.add('DELETE_USER', {
+      type: 'DELETE_USER',
+      userId,
+    });
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');
     res.status(200).json({ message: 'User deleted successfully' });

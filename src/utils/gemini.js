@@ -5,6 +5,7 @@ import _ from 'lodash';
  * Converts from database format to Gemini format
  */
 export const prepareHistoryForGemini = ({ conversationHistory }) => {
+  console.log("::HISTORY from prepareHistoryForGemini:: ", JSON.stringify(conversationHistory, null, 2));
   return conversationHistory
     .map((item) => {
       const metadata =
@@ -36,7 +37,7 @@ export const prepareHistoryForGemini = ({ conversationHistory }) => {
         return {
           role: 'user',
           parts: [{ text: item.content }],
-        };  
+        };
       }
       // Skip other roles (they're handled implicitly in the flow)
       return null;

@@ -1,50 +1,62 @@
 import db from '../knex/db.js';
+import _ from 'lodash';
 
-export const createNotebook = async ({ title, description, userId }) => {
+export const createNotebook = async (data) => {
   const result = await db('ragapp.notebooks')
     .insert({
-      title,
-      description,
-      fk_user_id: userId,
+      title: data.title,
+      description: data.description,
+      fk_user_id: data.userId,
     })
     .returning('*');
-  return result;
+  return _.first(result);
 };
 
-export const getNotebooks = async ({ userId }) => {
+export const getNotebooksByUserIds = async (data) => {
   return db('ragapp.notebooks')
     .select('id', 'title', 'description', 'updated_at')
-    .where('fk_user_id', userId)
+    .whereIn('fk_user_id', data.userIds)
     .where('is_deleted', false)
     .orderBy('updated_at', 'desc');
 };
 
-export const getNotebookById = async ({ id, userId }) => {
+export const getNotebooksByIds = async (data) => {
   return db('ragapp.notebooks')
     .select('id', 'title', 'description', 'created_at', 'updated_at')
-    .where('id', id)
-    .where('fk_user_id', userId)
+    .whereIn('id', data.notebookIds)
+    .where('fk_user_id', data.userId)
     .where('is_deleted', false)
-    .first();
+    .orderBy('updated_at', 'desc');
 };
 
-export const updateNotebook = async (id, data, userId) => {
-  const [result] = await db('ragapp.notebooks')
-    .where('id', id)
-    .where('fk_user_id', userId)
+export const updateNotebookById = async (data) => {
+  const result = await db('ragapp.notebooks')
+    .where('id', data.notebookId)
+    .where('fk_user_id', data.userId)
     .where('is_deleted', false)
     .update({
-      ...data,
+      ...data.updates,
       updated_at: new Date(),
     })
     .returning('*');
-  return result;
+  return _.first(result);
 };
 
-export const deleteNotebook = async (id, userId) => {
+export const deleteNotebooksByIds = async (data) => {
   return db('ragapp.notebooks')
-    .where('id', id)
-    .where('fk_user_id', userId)
+    .whereIn('id', data.notebookIds)
+    .where('fk_user_id', data.userId)
+    .where('is_deleted', false)
+    .update({
+      is_deleted: true,
+      deleted_at: new Date(),
+    });
+};
+
+export const deleteNotebooksByUserIds = async (data) => {
+  return db('ragapp.notebooks')
+    .whereIn('fk_user_id', data.userIds)
+    .where('is_deleted', false)
     .update({
       is_deleted: true,
       deleted_at: new Date(),

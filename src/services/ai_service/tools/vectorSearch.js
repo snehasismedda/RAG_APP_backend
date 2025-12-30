@@ -5,6 +5,7 @@ async function execute({ query, topK = 5, userId, notebookId, fileIds = [] }) {
     `[Tool: vectorSearch] Searching for queries: ${JSON.stringify(query)} with topK: ${topK}`
   );
   const results = await search({ query, topK, userId, notebookId, fileIds });
+  console.log("::VECTOR_SEARCH_RESULTS:: ", JSON.stringify(results, null, 2));
   return results;
 }
 
@@ -22,7 +23,7 @@ export const vectorSearchTool = {
             { type: 'array', items: { type: 'string' } },
           ],
           description:
-            'A natural language query or an array of queries for similarity search.',
+            'Natural language queries that covers the user intent and context and can give best results covering various aspects of the user query.',
         },
         topK: {
           type: 'number',

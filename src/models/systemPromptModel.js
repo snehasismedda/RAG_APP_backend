@@ -1,9 +1,9 @@
 import db from '../knex/db.js';
 
-export const getSystemPrompt = async ({ promptKey, version }) => {
+export const getSystemPrompt = async (data) => {
     return db('ragapp.system_prompts')
-        .where('prompt_key', promptKey)
-        .where('version', version || 'v1')
+        .where('prompt_key', data.promptKey)
+        .where('version', data.version || 'v1')
         .where('is_deleted', false)
         .first();
 };
@@ -36,9 +36,9 @@ export const updateSystemPrompt = async (data) => {
     return result;
 };
 
-export const deleteSystemPrompt = async (id) => {
+export const deleteSystemPrompt = async (data) => {
     const result = await db('ragapp.system_prompts')
-        .where('id', id)
+        .where('id', data.id)
         .update({ is_deleted: true, deleted_at: new Date() });
     return result;
 };

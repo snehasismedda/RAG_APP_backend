@@ -1,12 +1,13 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, CopyObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
-export const generatePresignedUrl = async ({ fileName, fileType }) => {
-    const key = `uploads/${Date.now()}_${fileName}`;
+export const generatePresignedUrl = async ({ fileName, fileType, userId }) => {
+
+    const key = `uploads/${userId}/${Date.now()}_${fileName}`;
 
     const command = new PutObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -39,6 +40,18 @@ export const getHeadObject = async (key) => {
     });
 
     const response = await s3Client.send(command);
-    console.log(response);
     return response;
+};
+
+export const archiveToGlacier = async (key) => {
+    const bucket = process.env.AWS_BUCKET_NAME;
+    const command = new CopyObjectCommand({
+        Bucket: bucket,
+        CopySource: `${bucket}/${key}`,
+        Key: key,
+        StorageClass: 'GLACIER',
+    });
+
+    await s3Client.send(command);
+    console.log(`Archived object to Glacier: ${key}`);
 };

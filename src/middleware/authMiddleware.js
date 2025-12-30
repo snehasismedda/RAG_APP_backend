@@ -2,9 +2,9 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import {
-  findRefreshToken,
-  deleteRefreshToken,
-  deleteAllRefreshTokensForUser,
+  findRefreshTokenByToken,
+  deleteRefreshTokensByToken,
+  deleteAllRefreshTokensByUserId,
   findUserById,
 } from '../models/userModel.js';
 import { generateTokens, cookieOptions } from '../utils/tokenUtils.js';
@@ -41,21 +41,23 @@ export const authenticate = (req, res, next) => {
 
     try {
       // Check if refresh token exists in database
-      const storedToken = await findRefreshToken(refreshToken);
+      const storedToken = await findRefreshTokenByToken({ token: refreshToken });
 
       if (!storedToken) {
-        // Token not in DB - possible token reuse attack!
         // Decode to get userId and revoke ALL their tokens
         try {
           const decoded = jwt.decode(refreshToken);
           if (decoded?.userId) {
-            await deleteAllRefreshTokensForUser(decoded.userId);
+            await deleteAllRefreshTokensByUserId({ userId: decoded.userId });
             console.warn(
               `Security: Possible token reuse detected for user ${decoded.userId}`
             );
           }
         } catch (e) {
-          // Ignore decode errors
+          return res.status(403).json({
+            error: 'Invalid session',
+            details: 'Please login again',
+          });
         }
         return res.status(403).json({
           error: 'Session expired',
@@ -65,7 +67,7 @@ export const authenticate = (req, res, next) => {
 
       // Check if refresh token is expired
       if (new Date(storedToken.expires_at) < new Date()) {
-        await deleteRefreshToken(refreshToken);
+        await deleteRefreshTokensByToken({ token: refreshToken });
         return res.status(403).json({
           error: 'Session expired',
           details: 'Please login again',
@@ -74,18 +76,16 @@ export const authenticate = (req, res, next) => {
 
       // Verify refresh token JWT signature
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-      // Get user from database
-      const refreshedUser = await findUserById(decoded.userId);
+      const refreshedUser = await findUserById({ id: decoded.userId });
       if (!refreshedUser) {
-        await deleteRefreshToken(refreshToken);
+        await deleteRefreshTokensByToken({ token: refreshToken });
         return res.status(403).json({
           error: 'User not found',
         });
       }
 
       // Token Rotation: Delete old token, generate new pair
-      await deleteRefreshToken(refreshToken);
+      await deleteRefreshTokensByToken({ token: refreshToken });
       const newTokens = await generateTokens(refreshedUser.id);
 
       // Set new cookies
@@ -94,12 +94,9 @@ export const authenticate = (req, res, next) => {
         maxAge: 15 * 60 * 1000, // 15 minutes
       });
       res.cookie('refresh_token', newTokens.refreshToken, cookieOptions);
-
-      // Attach user and continue
       req.user = refreshedUser;
       next();
     } catch (error) {
-      // JWT verification failed (invalid signature, etc.)
       console.error('Token refresh error:', error.message);
       return res.status(403).json({
         error: 'Invalid session',

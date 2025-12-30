@@ -19,7 +19,7 @@ export const generateTokens = async (userId) => {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  await saveRefreshToken(refreshToken, userId, expiresAt);
+  await saveRefreshToken({ token: refreshToken, userId, expiresAt });
 
   return { accessToken, refreshToken };
 };

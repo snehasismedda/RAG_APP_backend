@@ -99,6 +99,5 @@ export async function semanticChunk(text, metadata = {}) {
     });
 
     const docs = await splitter.createDocuments([text], [metadata]);
-    console.log(docs);
     return docs;
 }

@@ -9,7 +9,7 @@ export const prepareHistory = async (data) => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return [];
   }
-
+  console.log("::HISTORY from prepareHistory:: ", JSON.stringify(conversationHistory, null, 2));
   switch (model) {
     case 'gemini':
       return prepareHistoryForGemini({ conversationHistory });
@@ -18,12 +18,12 @@ export const prepareHistory = async (data) => {
   }
 };
 
-export const prepareDataToSaveConversation = async (data) => { 
+export const prepareDataToSaveConversation = async (data) => {
   const { model, conversationHistory } = data;
   let preparedData;
   switch (model) {
     case 'gemini':
-      preparedData = prepareDataToSaveConversationsForGemini({conversationHistory });
+      preparedData = prepareDataToSaveConversationsForGemini({ conversationHistory });
       break;
     default:
       throw new Error('Invalid model');

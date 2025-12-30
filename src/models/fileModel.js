@@ -17,9 +17,9 @@ export const saveFile = async (data) => {
     return _.first(result);
 }
 
-export const updateFile = async (data) => {
+export const updateFileById = async (data) => {
     return db('ragapp.files')
-        .where('id', data.id)
+        .where('id', data.fileId)
         .where('fk_user_id', data.userId)
         .update({
             processing_started_at: data.processingStartedAt,
@@ -29,20 +29,62 @@ export const updateFile = async (data) => {
         });
 }
 
-export const getFiles = async ({ notebookId, userId }) => {
+export const getFilesByNotebookIds = async (data) => {
     return db('ragapp.files')
         .select('id', 'file_name', 'object_key', 'bucket_name', 'storage_provider', 'mime_type', 'file_size', 'status', 'created_at', 'updated_at')
-        .where('fk_notebook_id', notebookId)
-        .where('fk_user_id', userId)
+        .whereIn('fk_notebook_id', data.notebookIds)
+        .where('fk_user_id', data.userId)
         .where('is_deleted', false)
         .orderBy('created_at', 'desc');
 }
 
-export const getFileStatus = async ({ fileId, userId }) => {
+export const getFileStatusByIds = async (data) => {
     return db('ragapp.files')
-        .select('status')
-        .where('id', fileId)
-        .where('fk_user_id', userId)
+        .select('id', 'status')
+        .whereIn('id', data.fileIds)
+        .where('fk_user_id', data.userId)
         .where('is_deleted', false)
-        .first();
+        .orderBy('created_at', 'desc');
+}
+
+export const deleteFilesByIds = async (data) => {
+    return db('ragapp.files')
+        .whereIn('id', data.fileIds)
+        .where('fk_notebook_id', data.notebookId)
+        .where('fk_user_id', data.userId)
+        .where('is_deleted', false)
+        .update({
+            is_deleted: true,
+            deleted_at: new Date()
+        });
+}
+
+export const deleteFilesByNotebookIds = async (data) => {
+    return db('ragapp.files')
+        .whereIn('fk_notebook_id', data.notebookIds)
+        .where('fk_user_id', data.userId)
+        .where('is_deleted', false)
+        .update({
+            is_deleted: true,
+            deleted_at: new Date()
+        });
+
+}
+
+export const deleteFilesByUserIds = async (data) => {
+    return db('ragapp.files')
+        .whereIn('fk_user_id', data.userIds)
+        .where('is_deleted', false)
+        .update({
+            is_deleted: true,
+            deleted_at: new Date()
+        });
+}
+
+export const getFilesByIds = async (data) => {
+    return db('ragapp.files')
+        .whereIn('id', data.fileIds)
+        .where('fk_user_id', data.userId)
+        .where('is_deleted', false)
+        .orderBy('created_at', 'desc');
 }

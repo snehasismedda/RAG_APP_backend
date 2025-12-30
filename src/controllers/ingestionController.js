@@ -1,6 +1,6 @@
-import { saveFile, getFileStatus } from "../models/fileModel.js";
+import * as fileModel from "../models/fileModel.js";
 import { getHeadObject } from "../services/aws_service/s3Service.js";
-import { ingestionQueue } from "../queues/ingestionQueue.js";
+import { ingestionQueue, deletionQueue } from "../queues/index.js";
 import multer from 'multer';
 
 const upload = multer({ dest: 'uploads/' });
@@ -26,7 +26,7 @@ export const ingestFile = async (req, res) => {
       return res.status(400).json({ error: "Invalid file. Please try again." });
     }
 
-    const fileData = await saveFile({
+    const fileData = await fileModel.saveFile({
       fileName: fileName,
       objectKey: objectKey,
       bucketName: process.env.AWS_BUCKET_NAME,
@@ -67,7 +67,7 @@ export const ingestUrl = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const fileData = await saveFile({
+    const fileData = await fileModel.saveFile({
       fileName: `${userId}_${Date.now()}_url`,
       objectKey: url,
       storageProvider: null,
@@ -96,8 +96,33 @@ export const fetchFileStatus = async (req, res) => {
     const { fileId } = req.params;
     const userId = req.user.id;
 
-    const fileData = await getFileStatus({ fileId, userId });
-    return res.status(200).json({ isSuccess: true, message: "File status retrieved", data: fileData });
+    const fileData = await fileModel.getFileStatusByIds({ fileIds: [fileId], userId });
+    return res.status(200).json({ isSuccess: true, message: "File status retrieved", fileData });
+  } catch (err) {
+    return res.status(500).json({ isSuccess: false, error: err.message });
+  }
+}
+
+export const deleteFile = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const userId = req.user.id;
+
+    const files = await fileModel.getFilesByIds({ fileIds: [fileId], userId });
+
+    if (!files || files.length === 0) {
+      return res.status(404).json({ isSuccess: false, error: "File not found" });
+    }
+
+    await deletionQueue.add('DELETE_FILE', {
+      type: 'DELETE_FILE',
+      fileId,
+      userId,
+      notebookId: files[0].fk_notebook_id,
+      objectKey: files[0].object_key,
+    });
+
+    return res.status(200).json({ isSuccess: true, message: "File deleted successfully" });
   } catch (err) {
     return res.status(500).json({ isSuccess: false, error: err.message });
   }

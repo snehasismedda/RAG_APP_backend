@@ -1,50 +1,75 @@
 import db from '../knex/db.js';
 
-export const createChat = async ({ title, notebookId, userId }) => {
+export const createChat = async (data) => {
   const result = await db('ragapp.chats')
     .insert({
-      title,
-      fk_notebook_id: notebookId,
-      fk_user_id: userId,
+      title: data.title,
+      fk_notebook_id: data.notebookId,
+      fk_user_id: data.userId,
     })
     .returning('*');
   return result;
 };
 
-export const getChats = async ({ notebookId, userId }) => {
+export const getChatsByNotebookIds = async (data) => {
   return db('ragapp.chats')
     .select('id', 'title', 'created_at', 'updated_at')
-    .where('fk_notebook_id', notebookId)
-    .where('fk_user_id', userId)
+    .whereIn('fk_notebook_id', data.notebookIds)
+    .where('fk_user_id', data.userId)
     .where('is_deleted', false)
     .orderBy('created_at', 'desc');
 };
 
-export const getChatById = async ({ id, userId }) => {
+export const getChatsByIds = async (data) => {
   return db('ragapp.chats')
     .select('id', 'title', 'fk_notebook_id', 'created_at', 'updated_at')
-    .where('id', id)
-    .where('fk_user_id', userId)
+    .whereIn('id', data.ids)
+    .where('fk_user_id', data.userId)
     .where('is_deleted', false)
-    .first();
+    .orderBy('created_at', 'desc');
 };
 
-export const updateChat = async ({ id, userId, data }) => {
+export const updateChatsByIds = async (data) => {
   const result = await db('ragapp.chats')
-    .where('id', id)
-    .where('fk_user_id', userId)
+    .whereIn('id', data.ids)
+    .where('fk_user_id', data.userId)
     .where('is_deleted', false)
     .update({
-      ...data,
+      ...data.updates,
       updated_at: new Date(),
     })
     .returning('*');
   return result;
 };
 
-export const deleteChat = async ({ id, userId }) => {
-  return db('ragapp.chats').where('id', id).where('fk_user_id', userId).update({
-    is_deleted: true,
-    deleted_at: new Date(),
-  });
+export const deleteChatsByIds = async (data) => {
+  return db('ragapp.chats')
+    .whereIn('id', data.chatIds)
+    .where('fk_user_id', data.userId)
+    .where('is_deleted', false)
+    .update({
+      is_deleted: true,
+      deleted_at: new Date(),
+    });
+};
+
+export const deleteChatsByNotebookIds = async (data) => {
+  return db('ragapp.chats')
+    .whereIn('fk_notebook_id', data.notebookIds)
+    .where('fk_user_id', data.userId)
+    .where('is_deleted', false)
+    .update({
+      is_deleted: true,
+      deleted_at: new Date(),
+    });
+};
+
+export const deleteChatsByUserIds = async (data) => {
+  return db('ragapp.chats')
+    .whereIn('fk_user_id', data.userIds)
+    .where('is_deleted', false)
+    .update({
+      is_deleted: true,
+      deleted_at: new Date(),
+    });
 };

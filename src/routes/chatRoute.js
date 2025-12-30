@@ -2,8 +2,6 @@ import express from 'express';
 import {
   chat,
   createChat,
-  getChats,
-  getChatById,
   updateChat,
   deleteChat,
   getConversations,
