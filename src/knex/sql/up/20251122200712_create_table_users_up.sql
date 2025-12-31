@@ -1,6 +1,6 @@
 create table if not exists ragapp.users(
     id bigint primary key default ragapp.generate_id(),
-    user_id text not null unique,
+    user_name text not null unique,
     first_name text not null,
     last_name  text not null,
     email text not null unique,

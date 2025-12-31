@@ -120,6 +120,8 @@ export const deleteFile = async (req, res) => {
       userId,
       notebookId: files[0].fk_notebook_id,
       objectKey: files[0].object_key,
+    }, {
+      jobId: `Job-delete-file-${fileId}`,
     });
 
     return res.status(200).json({ isSuccess: true, message: "File deleted successfully" });

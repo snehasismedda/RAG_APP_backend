@@ -133,10 +133,18 @@ export const deleteChat = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
+    const chat = await chatModel.getChatsByIds({ ids: [id], userId });
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
     await deletionQueue.add('DELETE_CHAT', {
       type: 'DELETE_CHAT',
       chatId: id,
       userId,
+    }, {
+      jobId: `Job-delete-chat-${id}`,
     });
 
     res.status(200).json({ message: 'Chat deleted successfully' });

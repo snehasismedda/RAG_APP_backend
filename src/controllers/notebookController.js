@@ -83,10 +83,18 @@ export const deleteNotebook = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
+    const notebook = await notebookModel.getNotebooksByIds({ notebookIds: [id], userId });
+
+    if (!notebook) {
+      return res.status(404).json({ error: 'Notebook not found' });
+    }
+
     deletionQueue.add('DELETE_NOTEBOOK', {
       type: 'DELETE_NOTEBOOK',
       notebookId: id,
       userId
+    }, {
+      jobId: `Job-delete-notebook-${id}`,
     });
 
     res.status(200).json({ message: 'Notebook deleted successfully' });

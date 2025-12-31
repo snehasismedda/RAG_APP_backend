@@ -36,17 +36,11 @@ const worker = new Worker(
         switch (type) {
             case 'DELETE_FILE': {
                 const { fileId, userId, notebookId, objectKey } = job.data;
-                console.log(JSON.stringify(job.data))
                 await deleteEmbeddingsByFileIds([fileId]);
-                console.log(`Deleted embeddings for file ${fileId}`);
-
                 // if (objectKey) {
                 //     await archiveToGlacier(objectKey);
-                //     console.log(`Archived S3 object to Glacier: ${objectKey}`);
                 // }
-
                 await deleteFilesByIds({ fileIds: [fileId], notebookId, userId });
-                console.log(`Soft deleted file record ${fileId}`);
             }
                 break;
 
@@ -54,30 +48,18 @@ const worker = new Worker(
                 const { chatId, userId } = job.data;
 
                 await deleteConversationsByChatIds({ chatIds: [chatId], userId });
-                console.log(`Deleted conversations for chat ${chatId}`);
-
                 await deleteChatsByIds({ chatIds: [chatId], userId });
-                console.log(`Soft deleted chat record ${chatId}`);
             }
                 break;
 
             case 'DELETE_NOTEBOOK': {
                 const { notebookId, userId } = job.data;
 
-                const result1 = await deleteEmbeddingsByNotebookIds([notebookId]);
-                console.log(`Deleted embeddings for notebook ${notebookId} -- ${JSON.stringify(result1)}`);
-
-                const result2 = await deleteFilesByNotebookIds({ notebookIds: [notebookId], userId });
-                console.log(`Soft deleted file records for notebook ${notebookId} -- ${JSON.stringify(result2)}`);
-
-                const result5 = await deleteConversationsByNotebookIds({ notebookIds: [notebookId], userId });
-                console.log(`Deleted conversations for notebook ${notebookId} -- ${JSON.stringify(result5)}`);
-
-                const result3 = await deleteChatsByNotebookIds({ notebookIds: [notebookId], userId });
-                console.log(`Soft deleted chat records for notebook ${notebookId} -- ${JSON.stringify(result3)}`);
-
-                const result4 = await deleteNotebooksByIds({ notebookIds: [notebookId], userId });
-                console.log(`Soft deleted notebook ${notebookId} -- ${JSON.stringify(result4)}`);
+                await deleteEmbeddingsByNotebookIds([notebookId]);
+                await deleteFilesByNotebookIds({ notebookIds: [notebookId], userId });
+                await deleteConversationsByNotebookIds({ notebookIds: [notebookId], userId });
+                await deleteChatsByNotebookIds({ notebookIds: [notebookId], userId });
+                await deleteNotebooksByIds({ notebookIds: [notebookId], userId });
             }
                 break;
 
@@ -85,22 +67,11 @@ const worker = new Worker(
                 const { userId } = job.data;
 
                 await deleteEmbeddingsByUserIds([userId]);
-                console.log(`Deleted embeddings for user ${userId}`);
-
                 await deleteFilesByUserIds({ userIds: [userId] });
-                console.log(`Soft deleted file records for user ${userId}`);
-
                 await deleteConversationsByUserIds({ userIds: [userId] });
-                console.log(`Deleted conversations for user ${userId}`);
-
                 await deleteChatsByUserIds({ userIds: [userId] });
-                console.log(`Soft deleted chat records for user ${userId}`);
-
                 await deleteNotebooksByUserIds({ userIds: [userId] });
-                console.log(`Soft deleted notebook records for user ${userId}`);
-
                 await deleteUsersByIds({ userIds: [userId] });
-                console.log(`Soft deleted user ${userId}`);
             }
                 break;
 

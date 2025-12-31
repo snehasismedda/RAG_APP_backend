@@ -114,9 +114,18 @@ export const logoutUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const userId = req.user.id;
+
+    const user = await userModel.getUsersByIds({ ids: [userId] });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     await deletionQueue.add('DELETE_USER', {
       type: 'DELETE_USER',
       userId,
+    }, {
+      jobId: `Job-delete-user-${userId}`,
     });
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');

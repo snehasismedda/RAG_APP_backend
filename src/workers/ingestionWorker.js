@@ -20,10 +20,8 @@ const worker = new Worker(
         if (type === 'FILE') {
             const { mimeType, objectKey, fileName } = data;
 
-            // Step 1: Get file stream from S3
             const fileStream = await getObjectStream(objectKey);
 
-            // Step 2: File-type detection & text extraction
             let rawText = '';
 
             if (mimeType.includes('text') || mimeType.includes('markdown')) {
@@ -37,10 +35,8 @@ const worker = new Worker(
                 throw new Error(`Unsupported file type: ${mimeType}`);
             }
 
-            // Step 3: Clean text
             const cleanedText = cleanText(rawText);
 
-            // Step 4: Semantic chunking (returns LangChain documents with all metadata)
             const chunks = await semanticChunk(cleanedText, {
                 source: fileName || objectKey,
                 fileId,
@@ -49,7 +45,6 @@ const worker = new Worker(
                 mimeType
             });
 
-            // Step 5: Generate embeddings and store
             await embedAndStore(chunks);
 
             return { isSuccess: true, message: 'File ingested successfully' };
@@ -58,7 +53,6 @@ const worker = new Worker(
         if (type === 'URL') {
             const { url } = data;
 
-            // loadUrl returns array of docs, extract text from pageContent
             const docs = await loadUrl(url);
             const rawText = docs.map(doc => doc.pageContent).join('\n');
             const cleanedText = cleanText(rawText);
