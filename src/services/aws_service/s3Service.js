@@ -43,15 +43,14 @@ export const getHeadObject = async (key) => {
     return response;
 };
 
-export const archiveToGlacier = async (key) => {
-    const bucket = process.env.AWS_BUCKET_NAME;
-    const command = new CopyObjectCommand({
-        Bucket: bucket,
-        CopySource: `${bucket}/${key}`,
-        Key: key,
-        StorageClass: 'GLACIER',
-    });
+// export const archiveToGlacier = async (key) => {
+//     const bucket = process.env.AWS_BUCKET_NAME;
+//     const command = new CopyObjectCommand({
+//         Bucket: bucket,
+//         CopySource: `${bucket}/${key}`,
+//         Key: key,
+//         StorageClass: 'GLACIER',
+//     });
 
-    await s3Client.send(command);
-    console.log(`Archived object to Glacier: ${key}`);
-};
+//     await s3Client.send(command);
+// };

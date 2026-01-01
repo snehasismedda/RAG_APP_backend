@@ -15,7 +15,7 @@ export const createNotebook = async (req, res) => {
     const notebook = await notebookModel.createNotebook({ title, description, userId });
     res.status(201).json(notebook);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to create notebook" });
   }
 };
 
@@ -26,7 +26,7 @@ export const getNotebooks = async (req, res) => {
     const notebooks = await notebookModel.getNotebooksByUserIds({ userIds: [userId] });
     res.status(200).json(notebooks);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to get notebooks" });
   }
 };
 
@@ -50,7 +50,7 @@ export const getNotebookContent = async (req, res) => {
 
     res.status(200).json({ notebook, chats, files });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to get notebook content" });
   }
 };
 
@@ -73,7 +73,7 @@ export const updateNotebook = async (req, res) => {
 
     res.status(200).json(notebook);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to update notebook" });
   }
 };
 
@@ -99,6 +99,6 @@ export const deleteNotebook = async (req, res) => {
 
     res.status(200).json({ message: 'Notebook deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to delete notebook" });
   }
 };

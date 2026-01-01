@@ -5,7 +5,6 @@ import {
     deleteEmbeddingsByNotebookIds,
     deleteEmbeddingsByUserIds
 } from '../services/vector_service/vectorStore.js';
-import { archiveToGlacier } from '../services/aws_service/s3Service.js';
 import {
     deleteFilesByUserIds,
     deleteFilesByNotebookIds,
@@ -37,9 +36,6 @@ const worker = new Worker(
             case 'DELETE_FILE': {
                 const { fileId, userId, notebookId, objectKey } = job.data;
                 await deleteEmbeddingsByFileIds([fileId]);
-                // if (objectKey) {
-                //     await archiveToGlacier(objectKey);
-                // }
                 await deleteFilesByIds({ fileIds: [fileId], notebookId, userId });
             }
                 break;

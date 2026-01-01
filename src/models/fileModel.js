@@ -13,6 +13,7 @@ export const saveFile = async (data) => {
         file_size: data.fileSize,
         status: data.status || 'PENDING',
         upload_completed_at: data.uploadCompletedAt || null,
+        url: data.url || null,
     }).returning('id');
     return _.first(result);
 }
@@ -31,7 +32,6 @@ export const updateFileById = async (data) => {
 
 export const getFilesByNotebookIds = async (data) => {
     return db('ragapp.files')
-        .select('id', 'file_name', 'object_key', 'bucket_name', 'storage_provider', 'mime_type', 'file_size', 'status', 'created_at', 'updated_at')
         .whereIn('fk_notebook_id', data.notebookIds)
         .where('fk_user_id', data.userId)
         .where('is_deleted', false)
@@ -85,6 +85,13 @@ export const getFilesByIds = async (data) => {
     return db('ragapp.files')
         .whereIn('id', data.fileIds)
         .where('fk_user_id', data.userId)
+        .where('is_deleted', false)
+        .orderBy('created_at', 'desc');
+}
+
+export const getFilesByUserIds = async (data) => {
+    return db('ragapp.files')
+        .whereIn('fk_user_id', data.userIds)
         .where('is_deleted', false)
         .orderBy('created_at', 'desc');
 }

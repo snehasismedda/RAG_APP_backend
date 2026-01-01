@@ -48,12 +48,13 @@ export const ingestFile = async (req, res) => {
         objectKey,
         mimeType: fileType
       }
+    }, {
+      jobId: `Job-ingest-file-${fileData.id}`,
     });
 
     return res.status(200).json({ isSuccess: true, message: "File ingestion queued", fileId: fileData.id });
 
   } catch (error) {
-    console.error("Error ingesting file:", error);
     return res.status(500).json({ isSuccess: false, error: "Failed to ingest file" });
   }
 }
@@ -69,11 +70,13 @@ export const ingestUrl = async (req, res) => {
 
     const fileData = await fileModel.saveFile({
       fileName: `${userId}_${Date.now()}_url`,
-      objectKey: url,
-      storageProvider: null,
+      url: url,
+      storageProvider: 'url',
       mimeType: "text/html",
       userId: userId,
-      notebookId: notebookId
+      notebookId: notebookId,
+      status: "UPLOADED",
+      uploadCompletedAt: new Date(Date.now()),
     });
 
     await ingestionQueue.add('process-url', {
@@ -82,12 +85,14 @@ export const ingestUrl = async (req, res) => {
       notebookId: notebookId,
       userId,
       data: { url }
+    }, {
+      jobId: `Job-ingest-url-${fileData.id}`,
     });
 
     return res.status(201).json({ isSuccess: true, message: "URL ingestion queued", fileId: fileData.id });
 
   } catch (err) {
-    return res.status(500).json({ isSuccess: false, error: err.message });
+    return res.status(500).json({ isSuccess: false, error: "Failed to ingest URL" });
   }
 }
 
@@ -109,7 +114,7 @@ export const deleteFile = async (req, res) => {
     const userId = req.user.id;
 
     const files = await fileModel.getFilesByIds({ fileIds: [fileId], userId });
-
+    console.log(files);
     if (!files || files.length === 0) {
       return res.status(404).json({ isSuccess: false, error: "File not found" });
     }

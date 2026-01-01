@@ -1,12 +1,6 @@
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-import {
-  addUser,
-  findUserByEmail,
-  deleteRefreshTokensByToken,
-  deleteAllRefreshTokensByUserId,
-  deleteUsersByIds,
-} from '../models/userModel.js';
+import * as userModel from '../models/userModel.js';
 import { deletionQueue } from '../queues/index.js';
 
 dotenv.config({ quiet: true });
@@ -22,7 +16,7 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const existingUser = await findUserByEmail({ email });
+    const existingUser = await userModel.findUserByEmail({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -48,7 +42,7 @@ export const registerUser = async (req, res) => {
       id: user.id
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to register user" });
   }
 };
 
@@ -60,7 +54,7 @@ export const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-    const user = await findUserByEmail({ email });
+    const user = await userModel.findUserByEmail({ email });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -90,8 +84,7 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Login Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to login user" });
   }
 };
 
@@ -100,22 +93,22 @@ export const logoutUser = async (req, res) => {
   try {
     const refreshToken = req.cookies.refresh_token;
     if (refreshToken) {
-      await deleteRefreshTokensByToken(refreshToken);
+      await userModel.deleteRefreshTokensByToken(refreshToken);
     }
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to logout user" });
   }
 };
 
 // Delete the current user
 export const deleteUser = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id } = req.params;
 
-    const user = await userModel.getUsersByIds({ ids: [userId] });
+    const user = await userModel.findUserById({ id });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -123,15 +116,15 @@ export const deleteUser = async (req, res) => {
 
     await deletionQueue.add('DELETE_USER', {
       type: 'DELETE_USER',
-      userId,
+      userId: id,
     }, {
-      jobId: `Job-delete-user-${userId}`,
+      jobId: `Job-delete-user-${id}`,
     });
     res.clearCookie('jwt');
     res.clearCookie('refresh_token');
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to delete user" });
   }
 };
 
@@ -146,10 +139,10 @@ export const getMe = async (req, res) => {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        userId: user.user_id,
+        userName: user.user_name,
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to get user" });
   }
 };

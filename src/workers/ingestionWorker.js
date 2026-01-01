@@ -76,14 +76,14 @@ const worker = new Worker(
 );
 
 worker.on('completed', async (job) => {
-    const result = await updateFileById({
+    await updateFileById({
         fileId: job.data.fileId,
         userId: job.data.userId,
         processingStartedAt: new Date(job.processedOn),
         processingCompletedAt: new Date(job.finishedOn),
         status: 'INGESTED',
     })
-    console.log(`Job ${job.id} completed successfully`, result);
+    console.log(`Job ${job.id} completed successfully`);
 });
 
 worker.on('failed', (job, err) => {
