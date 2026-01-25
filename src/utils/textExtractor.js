@@ -3,9 +3,7 @@ import mammoth from 'mammoth';
 import { MarkdownTextSplitter } from '@langchain/textsplitters';
 import { CheerioWebBaseLoader } from '@langchain/community/document_loaders/web/cheerio';
 
-/**
- * Reads a text stream and returns the content as a string
- */
+// Reads a text stream and returns the content as a string
 export async function readTextStream(stream) {
     const chunks = [];
     for await (const chunk of stream) {
@@ -14,9 +12,7 @@ export async function readTextStream(stream) {
     return Buffer.concat(chunks).toString('utf-8');
 }
 
-/**
- * Extracts text from a PDF stream
- */
+// Extracts text from a PDF stream
 export async function extractPdfText(stream) {
     const chunks = [];
     for await (const chunk of stream) {
@@ -27,9 +23,7 @@ export async function extractPdfText(stream) {
     return data.text;
 }
 
-/**
- * Extracts text from a DOCX stream
- */
+// Extracts text from a DOCX stream
 export async function extractDocxText(stream) {
     const chunks = [];
     for await (const chunk of stream) {
@@ -40,19 +34,15 @@ export async function extractDocxText(stream) {
     return result.value;
 }
 
-/**
- * Extracts text from a URL
- */
+// Extracts text from a URL
 export async function loadUrl(url) {
     const loader = new CheerioWebBaseLoader(url);
     const text = await loader.load();
     return text;
 }
 
-/**
- * Cleans extracted text by removing extra whitespace, control characters,
- * and common web artifacts like CSS/JS
- */
+// Cleans extracted text by removing extra whitespace, control characters,
+// and common web artifacts like CSS/JS
 export function cleanText(text) {
     return text
         // Remove CSS blocks (inline styles, @media queries, etc.)
@@ -88,10 +78,8 @@ export function cleanText(text) {
         .trim();
 }
 
-/**
- * Splits text into semantic chunks using LangChain's splitter
- * Returns documents in LangChain format
- */
+// Splits text into semantic chunks using LangChain's splitter
+// Returns documents in LangChain format
 export async function semanticChunk(text, metadata = {}) {
     const splitter = new MarkdownTextSplitter({
         chunkSize: 1000,

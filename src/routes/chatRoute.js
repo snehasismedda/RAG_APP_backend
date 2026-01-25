@@ -7,18 +7,16 @@ import {
   getConversations,
 } from '../controllers/chatController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { chatRateLimiter, defaultRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
-// Chat message endpoint
-router.post('/', chat);
-
-// Chat CRUD operations
-router.post('/create', createChat);
-router.get('/:chatId', getConversations);
-router.patch('/:id', updateChat);
-router.delete('/:id', deleteChat);
+router.post('/', chatRateLimiter, chat);
+router.post('/create', chatRateLimiter, createChat);
+router.get('/:chatId', defaultRateLimiter, getConversations);
+router.patch('/:id', defaultRateLimiter, updateChat);
+router.delete('/:id', defaultRateLimiter, deleteChat);
 
 export default router;

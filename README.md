@@ -5,6 +5,7 @@ A robust backend service for a Retrieval Augmented Generation (RAG) system, buil
 ## 🚀 Features
 
 *   **Authentication**: Secure user authentication using JWT-based access tokens and refresh tokens with Passport.js. Tokens are stored in HTTP-only cookies for enhanced security.
+*   **Rate Limiting**: Advanced rate limiting with Redis-backed distributed storage. Protects against abuse, brute-force attacks, and ensures fair resource allocation across all API endpoints.
 *   **File Ingestion**: Upload documents via AWS S3 Presigned URLs. Supports text extraction from PDFs, DOCX files, and plain text.
 *   **Vector Search**: Uses Qdrant for efficient vector storage and similarity search. Embeddings are generated using Google Gemini models.
 *   **Chat Interface**: Conversational AI capabilities with context retrieval from ingested documents.
@@ -62,6 +63,11 @@ AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_REGION=your_aws_region
 AWS_BUCKET_NAME=your_bucket_name
+
+# Rate Limiting (Optional)
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_SKIP_ON_REDIS_FAILURE=true
+RATE_LIMIT_WHITELIST_IPS=127.0.0.1,::1
 ```
 
 ## 🚀 Getting Started
@@ -134,6 +140,56 @@ AWS_BUCKET_NAME=your_bucket_name
 *   `GET /notebook/:id` - Get specific notebook content (requires authentication)
 *   `PATCH /notebook/:id` - Update notebook details (requires authentication)
 *   `DELETE /notebook/:id` - Delete a notebook (requires authentication)
+
+## 🚦 Rate Limiting
+
+The API implements advanced rate limiting to protect against abuse and ensure fair resource allocation. Rate limits vary by endpoint and authentication status.
+
+### Rate Limit Headers
+
+All responses include the following headers:
+- `X-RateLimit-Limit`: Maximum requests allowed in the time window
+- `X-RateLimit-Remaining`: Number of requests remaining
+- `X-RateLimit-Reset`: Unix timestamp when the limit resets
+- `Retry-After`: Seconds to wait before retrying (only when rate limited)
+
+### Default Limits
+
+**Authenticated Users** (user-based):
+- General endpoints: 100 requests/minute
+- Chat operations: 30 requests/minute
+- File ingestion: 10 requests/minute (token bucket with burst of 15)
+- AWS S3 presigned URLs: 20 requests/minute
+
+**Unauthenticated Users** (IP-based):
+- Authentication endpoints: 5 attempts per 5 minutes
+- Registration: 3 attempts per hour
+
+### Rate Limit Algorithms
+
+The system uses multiple algorithms optimized for different scenarios:
+- **Sliding Window**: Most endpoints (accurate, prevents boundary exploits)
+- **Token Bucket**: Expensive operations like file ingestion (allows bursts)
+- **Fixed Window**: Authentication endpoints (simple, effective for brute-force prevention)
+
+### Error Response
+
+When rate limited (HTTP 429), the response includes:
+```json
+{
+  "error": "Too Many Requests",
+  "message": "Rate limit exceeded. Please try again later.",
+  "retryAfter": 45,
+  "resetTime": "2026-01-01T15:30:00.000Z"
+}
+```
+
+### Configuration
+
+Rate limiting can be configured via environment variables:
+- `RATE_LIMIT_ENABLED`: Enable/disable rate limiting (default: true)
+- `RATE_LIMIT_SKIP_ON_REDIS_FAILURE`: Fail-open mode (default: true)
+- `RATE_LIMIT_WHITELIST_IPS`: Comma-separated list of whitelisted IPs
 
 ## 📁 Project Structure
 

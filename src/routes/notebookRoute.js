@@ -7,16 +7,16 @@ import {
   deleteNotebook,
 } from '../controllers/notebookController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { defaultRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// All notebook routes require authentication
 router.use(authenticate);
 
-router.post('/', createNotebook);
-router.get('/', getNotebooks);
-router.get('/:id', getNotebookContent);
-router.patch('/:id', updateNotebook);
-router.delete('/:id', deleteNotebook);
+router.post('/', defaultRateLimiter, createNotebook);
+router.get('/', defaultRateLimiter, getNotebooks);
+router.get('/:id', defaultRateLimiter, getNotebookContent);
+router.patch('/:id', defaultRateLimiter, updateNotebook);
+router.delete('/:id', defaultRateLimiter, deleteNotebook);
 
 export default router;

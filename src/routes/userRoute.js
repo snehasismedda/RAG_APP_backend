@@ -7,13 +7,14 @@ import {
   getMe,
 } from '../controllers/userController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { authRateLimiter, defaultRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
-router.post('/logout', logoutUser);
-router.get('/me', authenticate, getMe);
-router.delete('/:id', authenticate, deleteUser);
+router.post('/register', authRateLimiter, registerUser);
+router.post('/login', authRateLimiter, loginUser);
+router.post('/logout', authenticate, authRateLimiter, logoutUser);
+router.get('/me', authenticate, defaultRateLimiter, getMe);
+router.delete('/:id', authenticate, authRateLimiter, deleteUser);
 
 export default router;
