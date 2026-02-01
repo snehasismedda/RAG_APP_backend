@@ -1,9 +1,7 @@
 import _ from 'lodash';
 
-/**
- * Prepare conversation history for Gemini API
- * Converts from database format to Gemini format
- */
+// Prepare conversation history for Gemini API
+// Converts from database format to Gemini format
 export const prepareHistoryForGemini = ({ conversationHistory }) => {
   console.log("::HISTORY from prepareHistoryForGemini:: ", JSON.stringify(conversationHistory, null, 2));
   return conversationHistory
@@ -39,16 +37,13 @@ export const prepareHistoryForGemini = ({ conversationHistory }) => {
           parts: [{ text: item.content }],
         };
       }
-      // Skip other roles (they're handled implicitly in the flow)
       return null;
     })
     .filter(Boolean);
 };
 
-/**
- * Prepare data to save conversations for Gemini
- * Converts from Gemini response format to database format
- */
+// Prepare data to save conversations for Gemini
+// Converts from Gemini response format to database format
 export const prepareDataToSaveConversationsForGemini = ({
   conversationHistory,
 }) => {

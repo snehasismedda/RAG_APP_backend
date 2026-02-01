@@ -2,6 +2,7 @@ import db from '../knex/db.js';
 
 export const getSystemPrompt = async (data) => {
     return db('ragapp.system_prompts')
+        .select('content')
         .where('prompt_key', data.promptKey)
         .where('version', data.version || 'v1')
         .where('is_deleted', false)

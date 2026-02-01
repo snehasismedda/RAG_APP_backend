@@ -33,7 +33,7 @@ export const chat = async (req, res) => {
       getSystemPrompt({ promptKey, version }),
       prepareHistory({ notebookId, chatId, model, userId })
     ];
-    const [systemInstruction, history] = await Promise.all(promises);
+    const [{ content: systemInstruction }, history] = await Promise.all(promises);
     console.log("::HISTORY:: ", JSON.stringify(history, null, 2));
     console.log("::SYSTEM:: ", JSON.stringify(systemInstruction, null, 2));
     const response = await generateResponse({

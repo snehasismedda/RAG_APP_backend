@@ -1,5 +1,5 @@
 import { QdrantVectorStore } from '@langchain/qdrant';
-import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { embeddings, COLLECTION_NAME } from '../../config/vectorStore.js';
 import dotenv from 'dotenv';
 dotenv.config({ quiet: true });
 
@@ -10,16 +10,11 @@ export async function search({ query, topK = 5, userId, fileIds = [], notebookId
   console.log(`Searching for queries: ${JSON.stringify(queries)} with topK: ${topK}`);
 
   try {
-    const embeddings = new GoogleGenerativeAIEmbeddings({
-      model: 'text-embedding-004',
-      apiKey: process.env.GOOGLE_API_KEY,
-    });
-
     const vectorStore = await QdrantVectorStore.fromExistingCollection(
       embeddings,
       {
         url: process.env.QDRANT_URL || 'http://localhost:6333',
-        collectionName: 'rag_data',
+        collectionName: COLLECTION_NAME,
       }
     );
 
@@ -37,13 +32,11 @@ export async function search({ query, topK = 5, userId, fileIds = [], notebookId
 
     const filter = { must };
 
-    // Execute searches for all queries in parallel
     const searchPromises = queries.map((q) =>
       vectorStore.similaritySearchWithScore(q, topK, filter)
     );
 
     const resultsWithScores = await Promise.all(searchPromises);
-    // Flatten results and deduplicate
     const allResults = resultsWithScores.flat();
 
     // Deduplicate based on pageContent, keeping the result with the highest score

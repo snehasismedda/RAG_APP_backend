@@ -145,6 +145,7 @@ const _generateGeminiAiResponse = async (data, conversationsToSave = []) => {
           history: conversationHistory,
           query: '',
         },
+        conversationsToSave
       );
     }
   } catch (error) {

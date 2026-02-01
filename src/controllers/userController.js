@@ -23,7 +23,7 @@ export const registerUser = async (req, res) => {
 
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    const user = await addUser({
+    const user = await userModel.addUser({
       firstName,
       lastName,
       email,
